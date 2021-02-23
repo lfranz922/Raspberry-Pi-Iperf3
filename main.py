@@ -15,7 +15,7 @@ def getMode():
     return 1
 
 def main():
-    os.chdir(os.getcwd() + "\RPiiPerf")
+    #os.chdir(os.getcwd())
     print(os.getcwd())
     mode = getMode()
     while (mode == 1):
@@ -34,7 +34,9 @@ def startTwoWayTCP():
     """
     initates a 2 Way TCP test
     """
-
+    print("=================================\n")
+    print("starting TCP test")
+    print("\n=================================")
     os.system("iperf3.exe -s -B 11.0.0.50 --logfile Server1.txt")
     os.system("iperf3.exe -s -B 11.0.0.51 --logfile Server2.txt")
     os.system("iperf3.exe -c 11.0.0.50 -b 0 -B 11.0.0.51 -t 0 -V --logfile Client1.txt")
@@ -65,7 +67,12 @@ def isTCPRunning():
     for file in LogTypes.getLogFileNames():
         print(file)
         with open(file, 'r') as f:
-            last_line = f.read().splitlines()[-1]
+            try:
+                last_line = f.read().splitlines()[-1]
+            except:
+                last_line = "iperf3: exiting"
+                print("file is empty")
+
             if last_line != "iperf3: exiting" and last_line != "iperf3: error - unable to connect to server: Cannot assign requested address":
                 print (last_line)
                 speed = re.findall(r"\d+.?\d+ [A-Z]?bits/sec", last_line)

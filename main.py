@@ -1,12 +1,13 @@
+from ports import ports
 import os
 import datetime
 from datetime import datetime
 import time
 import re
 import io
-from contextlib import redirect_stdout
 import sys
 import subprocess
+import platform
 
 EXPECTED_SPEED = 500
 
@@ -15,19 +16,19 @@ def getMode():
     return 1
 
 def main():
-    #os.chdir(os.getcwd())
     print(os.getcwd())
     mode = getMode()
     while (mode == 1):
-        time.sleep(1)
+        #while (not pingPorts()):
+        #    pass
+
+        time.sleep(5)
         while (not startTwoWayTCP()):
-            time.sleep(0.5)
+            time.sleep(1)
             pass
         time.sleep(1)
         while (isTCPRunning()):
             time.sleep(1)
-
-    #while()
 
 
 def startTwoWayTCP():
@@ -88,7 +89,7 @@ def isTCPRunning():
                 time.sleep(1)
                 clearFileContents(file)
                 running = False
-                break
+                #break
 
     return running
 
@@ -109,4 +110,6 @@ class LogTypes():
         """
         return ["Server1", "Server2", "Client1", "Client2"]
 
+ports.ping("50.64.28.8")
+ports.ping("google.com")
 main()

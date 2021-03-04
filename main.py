@@ -1,4 +1,4 @@
-from ports import ports
+import ports
 import os
 import datetime
 from datetime import datetime
@@ -9,23 +9,26 @@ import sys
 import subprocess
 import platform
 
-EXPECTED_SPEED = 500
+EXPECTED_SPEED = 300
 
 def getMode():
     #TODO
     return 1
 
 def main():
+    ports = ports()
     print(os.getcwd())
     mode = getMode()
     while (mode == 1):
-        #while (not pingPorts()):
-        #    pass
-
+        while (not Ports.areConnected()):
+            print("connecting Ports...")
+            wait(1)
+        print("=================================\n")
+        print("        ports connected")
+        print("\n=================================")
         time.sleep(5)
         while (not startTwoWayTCP()):
             time.sleep(1)
-            pass
         time.sleep(1)
         while (isTCPRunning()):
             time.sleep(1)
@@ -36,7 +39,7 @@ def startTwoWayTCP():
     initates a 2 Way TCP test
     """
     print("=================================\n")
-    print("starting TCP test")
+    print("       starting TCP test")
     print("\n=================================")
     os.system("iperf3.exe -s -B 11.0.0.50 --logfile Server1.txt")
     os.system("iperf3.exe -s -B 11.0.0.51 --logfile Server2.txt")
@@ -110,6 +113,4 @@ class LogTypes():
         """
         return ["Server1", "Server2", "Client1", "Client2"]
 
-ports.ping("50.64.28.8")
-ports.ping("google.com")
 main()

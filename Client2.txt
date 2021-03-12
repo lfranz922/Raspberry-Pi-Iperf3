@@ -1,0 +1,14 @@
+iperf 3.6
+Linux raspberrypi 5.10.11-v7+ #1399 SMP Thu Jan 28 12:06:05 GMT 2021 armv7l
+- - - - - - - - - - - - - - - - - - - - - - - - -
+Test Complete. Summary Results:
+[ ID] Interval           Transfer     Bitrate         Retr
+CPU Utilization: local/sender 0.0% (0.0%u/0.0%s), remote/receiver 0.0% (0.0%u/0.0%s)
+iperf3: interrupt - the client has terminated
+iperf 3.6
+Linux raspberrypi 5.10.11-v7+ #1399 SMP Thu Jan 28 12:06:05 GMT 2021 armv7l
+- - - - - - - - - - - - - - - - - - - - - - - - -
+Test Complete. Summary Results:
+[ ID] Interval           Transfer     Bitrate         Retr
+CPU Utilization: local/sender 0.0% (0.0%u/0.0%s), remote/receiver 0.0% (0.0%u/0.0%s)
+iperf3: interrupt - the client has terminated

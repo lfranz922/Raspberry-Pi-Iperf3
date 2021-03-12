@@ -1,40 +1,61 @@
-import os
-import datetime
-from datetime import datetime
 import time
 import re
-import io
-import sys
 import subprocess
-import platform
-import subprocess
-import platform
-import threading
-from enum import Enum
+
+#TODO:
+"""
+Made by Lukas Franz
+Things to add:
+    - a better output screen (I'm thinking the speeds with a green background if iperf has a good speed and red if its slow/off)
+    - turn into a proper script
+        - when run from cmd line it throws an error
+    - look into the iperf termination thing
+    - fix the ping function to work for linux
+    -
+
+Things that could be expanded on in the future:
+    - interface with automation (send logs/speed maybe as JSON idk tho)
+    -
+"""
+
 
 class Port:
+    """
+    A port class that stores the ip (inet) of a port
+    """
     Ip = None
     def __init__(self, ip):
-        #Host = type
+        """
+        creates a new port
+        """
         Ip = ip
 
     def getIp():
+        """
+        returns the value of Ip
+        """
         return Ip
 
-    def getType():
-        return host
-
-class HostType(Enum):
-    Client = 1
-    Server = 2
 
 class Ports:
-    ports = []
+    """
+    An object that stores a list of all active ports
+    """
+
+    ports = [] #stores the IPs of all ethernet Ports
+
     def __init__(self):
+        """
+        Creates a Ports object and fills it with all active IPs
+        """
         self.getIps()
-        
+
 
     def getIps(self):
+        """
+        uses ifconfig to get all current ethernet ports and their IPs and places the IPs in the ports variable in Ports
+        returns a list of all active ethernet ports' IPs
+        """
         self.ports = []
         eth = []
         i = 0
@@ -44,20 +65,15 @@ class Ports:
             temp = subprocess.Popen(["ifconfig", f"eth{i}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             #temp = subprocess.Popen(["ifconfig eth0"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             for line in temp.readlines():
-                if 'error fetching interface information: Device not found' in line.decode('utf-8'):
+                if 'error' in line.decode('utf-8'):
                     searching = False
                     break
                 eth.append(line.decode('utf-8'))
                 print(line.decode('utf-8'))
             i += 1
-                
+
         print(eth)
-            
-#         lines = []
-#         for ByteLines in out.readlines():
-#             lines.append(ByteLines.decode("utf-8"))
-# 
-#         ips = []
+
         for i in range(len(eth)):
             if len(re.findall(r"eth\d", eth[i])) > 0:
                 print("ladies and gentlemen; we got him")
@@ -65,27 +81,23 @@ class Ports:
                 inet = re.findall(r"inet \d+.\d+.\d+.\d+", eth[i+1])
                 print(inet[0])
                 self.ports.append(inet[0][5:])
-# 
-#         print(ips)
-#         self.ports.extend(ips)
-        print(self.ports)
-        return(self.ports)
-    
-   
 
-    def ping(self, ip1, ip2):
+        print("found ports:", self.ports)
+        return(self.ports)
+
+
+
+    def ping(ip1, ip2):
         """
         Returns True if host (str) responds to a ping request.
-        Remember that a host may not respond to a ping (ICMP) request even if the host name is valid.
         """
         cmd = ['ping', '-c 1', '-I' + ip1, ip2]
-        #try:
         try:
             print("trying to connect")
             out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             lines = out.readlines()
             print(lines[-1].decode("utf-8"))
-            if lines[-1].decode("utf-8") == 'Ping request could not find host google.com. Please check the name and try again.\r\n':
+            if lines[-1].decode("utf-8") == 'Ping request could not find host google.com. Please check the name and try again.\r\n': #TODO change this to deal with linux string
                 print("Ports could not connect :'(")
                 return False
             for line in lines:
@@ -95,12 +107,13 @@ class Ports:
             return False
 
 
-        #out = subprocess.run(cmd, check = True, stdout=subprocess.PIPE).stdout
-        #print(out)
         return True
 
 
     def areConnected(self):
+        """
+        tests if any of the ports in self are connected to eachother
+        """
         try:
             print(self.ports)
             for p1 in self.ports:
@@ -117,11 +130,13 @@ class Ports:
             pass
         return False
 
-EXPECTED_SPEED = 300
+EXPECTED_MIN_SPEED = 900 #can be changed to whatever we want
 
 def getMode():
-    #TODO
+    #TODO for automation if we want idea is to add a switch that will make you have to manually turn iperf back on when it fails and leave it running for automation
     return 1
+
+
 class main:
     threads = []
     ports = []
@@ -131,7 +146,6 @@ class main:
         ips = Ports()
         ips.getIps()
         print("ips has ports:", ips.ports)
-        print(os.getcwd())
         mode = getMode()
         while (mode == 1):
             while (not ips.areConnected()):
@@ -150,36 +164,20 @@ class main:
 
     def startTwoWayTCP(self, ips):
         """
-        initates a 2 Way TCP test
+        initates a 2 Way TCP test with the first 2 ips from the ports list #can be changed
+        returns True if the test started running False otherwise
         """
         self.threads = []
         print("=================================\n")
         print("       starting TCP test")
         print("\n=================================")
-        #print("IPs: ")
-        #print(ips.ports)
+
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[0]} -f m --logfile Server1.txt'], shell = True, stdout = None))
-        #print("s1 done")
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[1]} -f m --logfile Server2.txt'], shell = True, stdout = None))
-        #print("s2 done")
-        
         self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[0]} -b 1001M -B {ips.ports[1]} -f m -t 0 -V --logfile Client1.txt'],
                                              shell = True, stdout = None))
-        #print("c1 done")
         self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -b 1001M -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
                                              shell = True, stdout = None))
-        #print("c2 done")
-#         os.system('iperf3 -s -B ' + ips.ports[0] + ' -f m --logfile Server1.txt')
-#         print("s1 done")
-#         os.system('iperf3 -s -B ' + ips.ports[1] + ' -f m --logfile Server2.txt')
-#         print("s2 done")
-#         os.system('iperf3 -c ' + ips.ports[0] + ' -b 0 -B ' + ips.ports[1] + ' -f m -t 0 -V --logfile Client1.txt')
-#         print("c1 done")
-#         os.system('iperf3 -c ' + ips.ports[1] + ' -b 0 -B ' + ips.ports[0] + ' -f m -t 0 -V --logfile Client2.txt')
-#         print("c2 done")
-#         
-        
-                              
         return self.isTCPRunning()
 
     def isTCPRunningStartup():
@@ -200,24 +198,25 @@ class main:
     def isTCPRunning(self):
         """
         Returns True if a 2 way TCP test is currently running False otherwise
+        Prints the speeds of the test if it is running
         """
+        speeds = []
         running = True
         for file in LogTypes.getLogFileNames():
-        
+
             with open(file, 'r') as f:
                 try:
-                    last_line = f.read().splitlines()[-1]
+                    last_line = f.read().splitlines()[-1] #this could be traded out for reading from CMD line
                     print(file, last_line)
                 except:
                     last_line = "iperf3: exiting"
                     print("file is empty")
                 try:
                     if "iperf3: exiting" not in last_line and last_line != "iperf3: error - unable to connect to server: Cannot assign requested address":
-                        #print (last_line)
                         speed = re.findall(r"\d+.?\d+ [A-Z]?bits/sec", last_line)
                         print(speed)
                         number = re.findall(r"\d+.?\d+", speed[-1])
-                       # print(number)
+                        speeds.append(float(numer[-1]))
                         if float(number[-1]) > EXPECTED_SPEED:
                             print(file[0:-4] + " 2-way TCP test is running")
                         elif float(number[-1]) > 1:
@@ -226,7 +225,7 @@ class main:
                             print("\n\n\nTCP TEST IS TOO LOW\n\n\n")
                             for t in self.threads:
                                 t.kill()
-                            subprocess.Popen(['killall iperf3'], shell = True)
+                            subprocess.Popen(['killall iperf3'], shell = True) #could be turned into its own function
                             running = False
                     else:
                         print(file[0:-4] + " 2-way TCP test is not running")
@@ -235,19 +234,28 @@ class main:
                         running = False
                 except:
                     print("file contains unexpected strings")
+                    subprocess.Popen(['killall iperf3'], shell = True)
                     for t in self.threads:
                         t.kill()
 
+        print("2 way TCP test has speeds: ", speeds)
         return running
 
     def clearFileContents(fName):
+        """
+        Empties a test file with the given name
+        """
         with open(fName, "w"):
             pass
 
 class LogTypes():
+    """
+    An object that stores the arbitrary names of each output file for iperf to
+    write to
+    """
     def getLogFileNames():
         """
-        returns a list of the 4 log file names as strs
+        returns a list of the 4 log file names as strs with their extension/file type (.txt)
         """
         return ["Server1.txt", "Server2.txt", "Client1.txt", "Client2.txt"]
 
@@ -257,5 +265,4 @@ class LogTypes():
         """
         return ["Server1", "Server2", "Client1", "Client2"]
 
-print(Ports.getIps(Ports()))
-main()
+main() #runs main

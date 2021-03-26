@@ -1,6 +1,7 @@
 import time
 import re
 import subprocess
+from datetime import datetime
 
 #TODO:
 """
@@ -61,7 +62,8 @@ class Ports:
         i = 0
         searching = True
         #cmd = f"ifconfig eth{i} | grep 'inet '| cut -d: -f2"
-        while searching:
+        for i in range(2):
+            print(i)
             temp = subprocess.Popen(["ifconfig", f"eth{i}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             #temp = subprocess.Popen(["ifconfig eth0"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             for line in temp.readlines():
@@ -70,7 +72,7 @@ class Ports:
                     break
                 eth.append(line.decode('utf-8'))
                 print(line.decode('utf-8'))
-            i += 1
+            
 
         print(eth)
 
@@ -96,8 +98,9 @@ class Ports:
             print("trying to connect")
             out = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
             lines = out.readlines()
+        
             print(lines[-1].decode("utf-8"))
-            if lines[-1].decode("utf-8") == 'Ping request could not find host google.com. Please check the name and try again.\r\n': #TODO change this to deal with linux string
+            if 'Cannot assign requested address' in lines[-1].decode("utf-8"): #TODO change this to deal with linux string
                 print("Ports could not connect :'(")
                 return False
             for line in lines:
@@ -115,13 +118,13 @@ class Ports:
         tests if any of the ports in self are connected to eachother
         """
         try:
-            print(self.ports)
+            print(Ports.ports)
             for p1 in self.ports:
                 for p2 in self.ports:
                     if p1 == p2:
                         print("ports are same")
                         continue
-                    if self.ping(p1, p2):
+                    elif Ports.ping(p1, p2):
                         connected_ports = [p1, p2]
                         print("ports connected")
                         return True
@@ -140,7 +143,9 @@ def getMode():
 class main:
     threads = []
     ports = []
+    
     def __init__(self):
+        main.clearFileContents("logs.txt")
         subprocess.Popen(['killall iperf3'], shell = True)
         time.sleep(1)
         ips = Ports()
@@ -157,6 +162,7 @@ class main:
             #time.sleep(5)
             while (not self.startTwoWayTCP(ips)):
                 time.sleep(0.5)
+                continue
             time.sleep(0.5)
             while (self.isTCPRunning()):
                 time.sleep(1)
@@ -174,10 +180,11 @@ class main:
 
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[0]} -f m --logfile Server1.txt'], shell = True, stdout = None))
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[1]} -f m --logfile Server2.txt'], shell = True, stdout = None))
-        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[0]} -b 1001M -B {ips.ports[1]} -f m -t 0 -V --logfile Client1.txt'],
+        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[0]} -B {ips.ports[1]} -f m -t 0 -V --logfile Client1.txt'],
                                              shell = True, stdout = None))
-        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -b 1001M -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
+        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
                                              shell = True, stdout = None))
+        time.sleep(2)
         return self.isTCPRunning()
 
     def isTCPRunningStartup():
@@ -202,6 +209,7 @@ class main:
         """
         speeds = []
         running = True
+        print("------------------------------------------------------------------------------------------------------------------")
         for file in LogTypes.getLogFileNames():
 
             with open(file, 'r') as f:
@@ -211,13 +219,14 @@ class main:
                 except:
                     last_line = "iperf3: exiting"
                     print("file is empty")
+                    
                 try:
-                    if "iperf3: exiting" not in last_line and last_line != "iperf3: error - unable to connect to server: Cannot assign requested address":
+                    if "iperf3: exiting" not in last_line and "iperf3: error" not in last_line:
                         speed = re.findall(r"\d+.?\d+ [A-Z]?bits/sec", last_line)
                         print(speed)
                         number = re.findall(r"\d+.?\d+", speed[-1])
-                        speeds.append(float(numer[-1]))
-                        if float(number[-1]) > EXPECTED_SPEED:
+                        speeds.append(float(number[-1]))
+                        if float(number[-1]) > EXPECTED_MIN_SPEED:
                             print(file[0:-4] + " 2-way TCP test is running")
                         elif float(number[-1]) > 1:
                             print(file[0:-4] + " 2-way TCP test is not running well")
@@ -235,10 +244,21 @@ class main:
                 except:
                     print("file contains unexpected strings")
                     subprocess.Popen(['killall iperf3'], shell = True)
+                    main.clearFileContents(file)
                     for t in self.threads:
                         t.kill()
-
+    
         print("2 way TCP test has speeds: ", speeds)
+        print("------------------------------------------------------------------------------------------------------------------")
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        log_file = open("logs.txt", 'a')
+        if not running:
+            log_file.write(str(timestamp) + ": Iperf went down\n")
+            time.sleep(0.25)
+        else:
+            log_file.write(str(timestamp) + ": " + str(speeds)+"\n")
+        log_file.close()
         return running
 
     def clearFileContents(fName):

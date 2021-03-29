@@ -252,7 +252,7 @@ class main:
         print("------------------------------------------------------------------------------------------------------------------")
         now = datetime.now()
         timestamp = datetime.timestamp(now)
-        log_file = open("logs.txt", 'a')
+        log_file = open("logs.txt", 'a+')
         if not running:
             log_file.write(str(timestamp) + ": Iperf went down\n")
             time.sleep(0.25)

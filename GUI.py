@@ -4,9 +4,11 @@ import tkinter as tk
 import tkinter.font as tkFont
 import time
 import iperfScript as script
+import threading
 
 class App(tk.Frame):
     is_running = False
+    script = None
     def __init__(self, root):
         #setting title
         root.title("undefined")
@@ -76,10 +78,11 @@ class App(tk.Frame):
         #self.client1.configure(text="1")
         print("OG: ", self.is_running)
         if not self.is_running:
-            self.script = script.main
+            script.start(self)
+            #threading.Thread(target="script.start()")
             #print(self.script)
             self.start_button.configure(text=("STOP"))
-            #self.root.after(0, self.script=script.main)
+            #self.root.after(0, script.main)
             self.root.after(100, self.run_script)
             self.is_running = not self.is_running
         else:

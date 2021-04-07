@@ -140,6 +140,7 @@ def getMode():
 class main:
     threads = []
     ports = []
+    speeds = []
     def __init__(self):
         subprocess.Popen(['killall iperf3'], shell = True)
         time.sleep(1)
@@ -239,6 +240,7 @@ class main:
                         t.kill()
 
         print("2 way TCP test has speeds: ", speeds)
+        self.speeds = speeds
         return running
 
     def clearFileContents(fName):
@@ -247,6 +249,11 @@ class main:
         """
         with open(fName, "w"):
             pass
+
+    def end(self):
+        subprocess.Popen(['killall iperf3'], shell = True)
+        for t in self.threads:
+            t.kill()
 
 class LogTypes():
     """
@@ -265,4 +272,4 @@ class LogTypes():
         """
         return ["Server1", "Server2", "Client1", "Client2"]
 
-main() #runs main
+#main() #runs main

@@ -196,7 +196,7 @@ class main:
         print(isRunning)
         return isRunning
 
-    def get_speeds(self):
+    def get_speeds():
         speeds = []
         for file in LogTypes.getLogFileNames():
 
@@ -213,16 +213,7 @@ class main:
                         print(speed)
                         number = re.findall(r"\d+.?\d+", speed[-1])
                         speeds.append(float(numer[-1]))
-                        if float(number[-1]) > EXPECTED_SPEED:
-                            print(file[0:-4] + " 2-way TCP test is running")
-                        elif float(number[-1]) > 1:
-                            print(file[0:-4] + " 2-way TCP test is not running well")
-                        else:
-                            print("\n\n\nTCP TEST IS TOO LOW\n\n\n")
-                            for t in self.threads:
-                                t.kill()
-                            subprocess.Popen(['killall iperf3'], shell = True) #could be turned into its own function
-                            running = False
+
                     else:
                         print(file[0:-4] + " 2-way TCP test is not running")
                         main.clearFileContents(file)
@@ -231,8 +222,6 @@ class main:
                 except:
                     print("file contains unexpected strings")
                     subprocess.Popen(['killall iperf3'], shell = True)
-                    for t in self.threads:
-                        t.kill()
         return speeds
 
     def isTCPRunning(self):

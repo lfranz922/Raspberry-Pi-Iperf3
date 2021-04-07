@@ -78,11 +78,12 @@ class App(tk.Frame):
         #self.client1.configure(text="1")
         print("OG: ", self.is_running)
         if not self.is_running:
-            script.start(self)
-            #threading.Thread(target="script.start()")
+            #script.start(self)
+            #threading.Thread(target="script.start(self)")
+            print(self.script)
             #print(self.script)
             self.start_button.configure(text=("STOP"))
-            #self.root.after(0, script.main)
+            self.root.after(0, script.main)
             self.root.after(100, self.run_script)
             self.is_running = not self.is_running
         else:
@@ -100,7 +101,7 @@ class App(tk.Frame):
 
     def loop_cmd(self):
         if self.is_running:
-            print(self.script.speeds)
+            print(script.main.get_speeds())
             self.root.after(100, self.run_script)
 
 

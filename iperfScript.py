@@ -201,7 +201,35 @@ class main:
         isRunning = line != 'iperf3: error - unable to connect to server: Cannot assign requested address\n'
         print(isRunning)
         return isRunning
+    
+    def get_speeds():
+        speeds = []
+        for file in LogTypes.getLogFileNames():
 
+            with open(file, 'r') as f:
+                try:
+                    last_line = f.read().splitlines()[-1] #this could be traded out for reading from CMD line
+                    print(file, last_line)
+                except:
+                    last_line = "iperf3: exiting"
+                    print("file is empty")
+                try:
+                    if "iperf3: exiting" not in last_line and last_line != "iperf3: error - unable to connect to server: Cannot assign requested address":
+                        speed = re.findall(r"\d+.?\d+ [A-Z]?bits/sec", last_line)
+                        print(speed)
+                        number = re.findall(r"\d+.?\d+", speed[-1])
+                        speeds.append(float(numer[-1]))
+
+                    else:
+                        print(file[0:-4] + " 2-way TCP test is not running")
+                        main.clearFileContents(file)
+                        subprocess.Popen(['killall iperf3'], shell = True)
+                        running = False
+                except:
+                    print("file contains unexpected strings")
+                    subprocess.Popen(['killall iperf3'], shell = True)
+        return speeds
+    
     def isTCPRunning(self):
         """
         Returns True if a 2 way TCP test is currently running False otherwise
@@ -285,4 +313,7 @@ class LogTypes():
         """
         return ["Server1", "Server2", "Client1", "Client2"]
 
-main() #runs main
+def start(GUI):
+    GUI.script = main()
+    
+#main() #runs main

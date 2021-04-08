@@ -3,8 +3,10 @@
 import tkinter as tk
 import tkinter.font as tkFont
 import time
-import iperfScript as script
+import iperfScript0 as script
 import threading
+
+run = False
 
 class App(tk.Frame):
     is_running = False
@@ -23,7 +25,7 @@ class App(tk.Frame):
 
         start_button=tk.Button(root)
         start_button["bg"] = "#6f6f6f"
-        start_button["cursor"] = "spraycan"
+        start_button["cursor"] = "spider"
         ft = tkFont.Font(family='Times',size=10)
         start_button["font"] = ft
         start_button["fg"] = "#ffffff"
@@ -75,37 +77,37 @@ class App(tk.Frame):
         self.root = root
 
     def start_button_command(self):
+        global run
         #self.client1.configure(text="1")
-        print("OG: ", self.is_running)
-        if not self.is_running:
+        print("OG: ", run)
+        run = not run
+        if run:
             #script.start(self)
-            #threading.Thread(target="script.start(self)")
+            print("run: ", run)
+            self.script = threading.Thread(target=script.main, args=(run, [self.client1, self.client2, self.server1, self.server2]))
             print(self.script)
+            self.script.start()
             #print(self.script)
             self.start_button.configure(text=("STOP"))
-            self.root.after(0, script.main)
-            self.root.after(100, self.run_script)
-            self.is_running = not self.is_running
+
         else:
+            print("run: ", run)
             self.start_button.configure(text=("START"))
-            self.script.end(self.script)
-            self.is_running = not self.is_running
+            self.script.join(10)
+
 
 
     def run_script(self):
-        print(self.is_running)
-        if self.is_running:
+        print(run)
+        if run:
             #now = int(self.client1["text"])
             self.client1.configure(text="str")
             self.loop_cmd()
 
-    def loop_cmd(self):
-        if self.is_running:
-            print(script.main.get_speeds())
-            self.root.after(100, self.run_script)
+
 
 
 root = tk.Tk()
 app=App(root)
-root.wm_title("Tkinter clock")
+root.wm_title("2-Way TCP Test")
 root.mainloop()

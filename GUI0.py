@@ -81,6 +81,22 @@ class Ports:
         print("found ports:", self.ports)
         return(self.ports)
 
+    def make_dummy_ports(self):
+        """
+        Changes the IPs of the 2 ports to force traffic to go externally
+        """
+
+        dummy_ip = ["11.0.0.50", "11.0.0.51"]
+
+        subprocess.Popen([f"arp -s {dummy_ip[0]} {self.MAC[0]}"], shell = True)
+        subprocess.Popen([f"arp -s {dummy_ip[1]} {self.MAC[1]}"], shell = True)
+        subprocess.Popen([f"ip route add {dummy_ip[0]} dev eth1"], shell = True)
+        subprocess.Popen([f"ip route add {dummy_ip[1]} dev eth0"], shell = True)
+        subprocess.Popen([f"iptables -t nat -A POSTROUTING -d {dummy_ip[0]} -j SNAT --to-source {self.ports[0]}"], shell = True)
+        subprocess.Popen([f"iptables -t nat -A POSTROUTING -d {dummy_ip[1]} -j SNAT --to-source {self.ports[1]}"], shell = True)
+
+        self.real_ports = self.ports
+        self.ports = dummy_ip
 
 
     def ping(ip1, ip2):
@@ -112,7 +128,7 @@ class Ports:
         tests if any of the ports in self are connected to eachother
         """
         try:
-            print(Ports.ports)
+            #print(Ports.ports)
             for p1 in self.ports:
                 for p2 in self.ports:
                     if p1 == p2:
@@ -120,7 +136,7 @@ class Ports:
                         continue
                     elif Ports.ping(p1, p2):
                         connected_ports = [p1, p2]
-                        print("ports connected")
+                        print(f"ports {p1}, {p2} are connected")
                         return True
         except:
             print("ports not connected")
@@ -144,12 +160,15 @@ class main:
         main.clearFileContents("logs.txt")
         subprocess.Popen(['killall iperf3'], shell = True)
         time.sleep(0.25)
-        ips = Ports()
-        ips.getIps()
-        print("ips has ports:", ips.ports)
+
         mode = getMode()
         print("Script told to run:", run)
         while run:
+            ips = Ports()
+            ips.getIps()
+            print("ips has ports:", ips.ports)
+            ips.make_dummy_ports()
+            print("Created and using dummy ips: ", ips.ports)
             while (not ips.areConnected() and run):
                 print("connecting Ports...")
                 time.sleep(0.5)

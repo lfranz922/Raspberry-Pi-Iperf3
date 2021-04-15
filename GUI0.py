@@ -343,7 +343,7 @@ class App(tk.Frame):
         client1["fg"] = "#ffffff"
         client1["justify"] = "left"
         client1["text"] = "Client 1: Not Running"
-        client1.place(x=20,y=150,width=175,height=40)
+        client1.place(x=65,y=150,width=175,height=40)
         self.client1 = client1
 
         client2=tk.Label(root)
@@ -353,7 +353,7 @@ class App(tk.Frame):
         client2["fg"] = "#ffffff"
         client2["justify"] = "left"
         client2["text"] = "Client 2: Not Running"
-        client2.place(x=20,y=200,width=175,height=40)
+        client2.place(x=65,y=200,width=175,height=40)
         self.client2 = client2
 
         server1=tk.Label(root)
@@ -363,7 +363,7 @@ class App(tk.Frame):
         server1["fg"] = "#ffffff"
         server1["justify"] = "left"
         server1["text"] = "Server 1: Not Running"
-        server1.place(x=445,y=150,width=175,height=40)
+        server1.place(x=400,y=150,width=175,height=40)
         self.server1 = server1
 
         server2=tk.Label(root)
@@ -373,7 +373,7 @@ class App(tk.Frame):
         server2["fg"] = "#ffffff"
         server2["justify"] = "left"
         server2["text"] = "Server 2: Not Running"
-        server2.place(x=445,y=200,width=175,height=40)
+        server2.place(x=400,y=200,width=175,height=40)
         self.server2 = server2
         self.root = root
 
@@ -404,21 +404,6 @@ class App(tk.Frame):
             print("run: ", run)
             self.start_button.configure(text=("START"))
             self.script.join()
-
-
-
-    def run_script(self):
-        print(run)
-        if run:
-            #now = int(self.client1["text"])
-            self.client1.configure(text="str")
-            self.loop_cmd()
-
-    def loop():
-        global run
-        while run:
-            print("looping ", run)
-            time.sleep(1)
 
 
 

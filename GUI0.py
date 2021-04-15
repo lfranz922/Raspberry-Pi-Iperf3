@@ -151,17 +151,17 @@ class main:
         mode = getMode()
         print("Script told to run:", run)
         while run:
-            while (not ips.areConnected() and run):
+            while (run and not ips.areConnected()):
                 print("connecting Ports...")
                 time.sleep(0.5)
             print("=================================\n")
             print("        ports connected")
             print("\n=================================")
-            while (not self.startTwoWayTCP(ips) and run):
+            while (run and not self.startTwoWayTCP(ips)):
                 time.sleep(0.5)
                 continue
             time.sleep(0.5)
-            while (self.isRunning() and run):
+            while (run and self.isRunning()):
                 time.sleep(0.5)
                 print("Script Running: ", run)
                 try:
@@ -220,7 +220,7 @@ class main:
         return self.isRunning()
 
 
-    def isTCPRunning(self):
+    def isRunning(self):
         """
         Returns True if a 2 way TCP test is currently running False otherwise
         Prints the speeds of the test if it is running

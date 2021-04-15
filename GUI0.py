@@ -3,6 +3,7 @@
 import tkinter as tk
 import tkinter.font as tkFont
 import time
+from tkinter import ttk
 #import iperfScript0 as script
 import threading
 import time
@@ -160,7 +161,7 @@ class main:
                 time.sleep(0.5)
                 continue
             time.sleep(0.5)
-            while (self.isTCPRunning() and run):
+            while (self.isRunning() and run):
                 time.sleep(0.5)
                 print("Script Running: ", run)
                 try:
@@ -180,6 +181,24 @@ class main:
             t.kill()
         return None
 
+    def startTest(self, ips, test):
+        """
+        initates a 2 Way TCP test with the first 2 ips from the ports list #can be changed
+        returns True if the test started running False otherwise
+        """
+        self.threads = []
+        print("=====================================\n")
+        print(f"       starting 1 way TCP test")
+        print("\n=====================================")
+
+        self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[0]} -f m --logfile Server1.txt'], shell = True, stdout = None))
+        #self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[1]} -f m --logfile Server2.txt'], shell = True, stdout = None))
+        #self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[0]} -B {ips.ports[1]} -f m -t 0 -V --logfile Client1.txt'],
+        #                                     shell = True, stdout = None))
+        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
+                                             shell = True, stdout = None))
+        time.sleep(2)
+        return self.isRunning()
 
     def startTwoWayTCP(self, ips):
         """
@@ -187,9 +206,9 @@ class main:
         returns True if the test started running False otherwise
         """
         self.threads = []
-        print("=================================\n")
-        print("       starting TCP test")
-        print("\n=================================")
+        print("=====================================\n")
+        print("       starting 2 way TCP test")
+        print("\n=====================================")
 
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[0]} -f m --logfile Server1.txt'], shell = True, stdout = None))
         self.threads.append(subprocess.Popen([f'iperf3 -s -B {ips.ports[1]} -f m --logfile Server2.txt'], shell = True, stdout = None))
@@ -198,7 +217,7 @@ class main:
         self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
                                              shell = True, stdout = None))
         time.sleep(2)
-        return self.isTCPRunning()
+        return self.isRunning()
 
 
     def isTCPRunning(self):
@@ -358,9 +377,17 @@ class App(tk.Frame):
         self.server2 = server2
         self.root = root
 
+        options=ttk.Combobox(root, values=["1-way TCP", "2-way TCP", "1-way UDP", "2-way UDP"], state="readonly")
+        ft = tkFont.Font(family='Times',size=12)
+        options["justify"] = "left"
+        options.place(x=260,y=300,width=120,height=20)
+        options.current(1)
+        self.options = options
+        self.root = root
+
     def start_button_command(self):
         global run
-        #self.client1.configure(text="1")
+        print(self.options.current())
         print("OG: ", run)
         run = not run
         if run:

@@ -48,7 +48,7 @@ class Ports:
         i = 0
         searching = True
         # cmd = f"ifconfig eth{i} | grep 'inet '| cut -d: -f2"
-        for i in range(2):
+        for i in range(1):
             # print(i)
             temp = subprocess.Popen(
                 ["ifconfig", f"eth{i}"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
@@ -101,24 +101,25 @@ class Ports:
         """
         tests if any of the ports in self are connected to eachother
         """
-        try:
-            print(Ports.ports)
-            for p1 in self.ports:
-                for p2 in self.ports:
-                    if p1 == p2:
-                        print("ports are same")
-                        continue
-                    elif Ports.ping(p1, p2):
-                        connected_ports = [p1, p2]
-                        print("ports connected")
-                        return True
-        except:
-            print("ports not connected")
-            pass
-        return False
+        return Ports.ping(self.ports[0], "169.254.224.49")
+        #try:
+            #print(Ports.ports)
+            #for p1 in self.ports:
+                #for p2 in self.ports:
+                    #if p1 == p2:
+                    #    print("ports are same")
+                    #    continue
+                    #elif Ports.ping(p1, p2):
+                        #connected_ports = [p1, p2]
+    #                    print("ports connected")
+    #                    return True
+    #    except:
+    #        print("ports not connected")
+    #        pass
+    #    return False
 
 
-EXPECTED_MIN_SPEED = 900  # can be changed to whatever we want
+EXPECTED_MIN_SPEED = 10  # can be changed to whatever we want
 
 
 class main:
@@ -129,7 +130,9 @@ class main:
         global run
         self.test_type = test_type
         self.labels = labels
-        self.log_name = f"{str(datetime.now())}_{test_type}.txt"
+        now = datetime.now()
+        date_time = now.strftime("%m_%d_%Y_%H_%M_%S")
+        self.log_name = f"{date_time}_{test_type}.txt"
 
         subprocess.Popen(['killall iperf3'], shell=True)
         time.sleep(0.25)
@@ -144,52 +147,58 @@ class main:
             print("=================================\n")
             print("        ports connected")
             print("\n=================================")
-            while (run and not self.startTest(ips)):
+            while (run and not self.startTest(test_type)):
                 time.sleep(0.5)
                 continue
             time.sleep(0.5)
             while (run and self.isRunning()):
                 time.sleep(0.5)
                 print("Script Running: ", run)
-                try:
-                    for i in range(4):
-                        labels[i].configure(text=LogTypes.getNames()[
-                                            i] + ": " + str(self.speeds[i]))
-                except:
-                    print("exception happened. run: ", run)
-                    pass
+                if (not run):
+                    break
 
-            print("Script told to run:", run)
+                for i in range(int(test_type[0])):
+                        labels[i].configure(text=LogTypes.getNames()[i] + ": " + str(self.speeds[i]))
+
+                print("exception happened. run: ", run)
+            if not run:
+                break
+
+            print("End of Loop, Run:", run)
 
         print("done while loop")
-        for i in range(4):
-            labels[i].configure(text=LogTypes.getNames()[i] + ": Not Running")
+        #for i in range(int(test_type[0])):
+        #    labels[i].configure(text=LogTypes.getNames()[i] + ": Not Running")
+        print("killing iperf")
         subprocess.Popen(['killall iperf3'], shell=True)
+        print("kiling Subprocess")
         for t in self.threads:
             t.kill()
+        print("test over")
         return None
 
-    def startTest(self, ips, test):
+    def startTest(self, test):
         """
         initates a 2 Way TCP test with the first 2 ips from the ports list #can be changed
         returns True if the test started running False otherwise
         """
         self.threads = []
-        server_cmd = 'iperf3 -s -B {} -f m --logfile {}'
-        client_cmd = 'iperf3 -c {} -B {} -f m -t 0 -V --logfile {}'
+        client_cmd_R = 'iperf3 -c 169.254.224.49 -f m -t 0 -V --logfile {} -R --port 5400'
+        client_cmd = 'iperf3 -c 169.254.224.49 -f m -t 0 -V --logfile {} --port 5201'
         if "UDP" in test:
             client_cmd = client_cmd + "-u"
+            client_cmd_R = client_cmd_R + "-u"
 
         self.threads.append(subprocess.Popen(
-            [server_cmd.format(ips.ports[0], "Server1.txt")], shell=True, stdout=None, name="Server1.txt"))
-        self.threads.append(subprocess.Popen([client_cmd.format(ips.ports[1], ips.ports[0], 'Client1.txt')],
-                                             shell=True, stdout=None, name="Client1.txt"))
+            [client_cmd_R.format("client1.txt")], shell=True, stdout=None))
+        #self.threads.append(subprocess.Popen([client_cmd.format(ips.ports[1], ips.ports[0], 'Client1.txt')],
+        #                                     shell=True, stdout=None, name="Client1.txt"))
 
         if "2" in test:
             self.threads.append(subprocess.Popen(
-                [server_cmd.format(ips.ports[1], "Server2.txt")], shell=True, stdout=None, name="Server2.txt"))
-            self.threads.append(subprocess.Popen([client_cmd.format(ips.ports[0], ips.ports[1], 'Client2.txt')],
-                                                 shell=True, stdout=None, name="Client2.txt"))
+                [client_cmd.format("client2.txt")], shell=True, stdout=None))
+            #self.threads.append(subprocess.Popen([client_cmd.format(ips.ports[0], ips.ports[1], 'Client2.txt')],
+            #                                     shell=True, stdout=None, name="Client2.txt"))
 
         print("=====================================\n")
         print(f"       starting {test}")
@@ -198,7 +207,7 @@ class main:
         time.sleep(2)
         return self.isRunning()
 
-    def startTest(self, ips):
+    def startTestOLD(self, ips):
         """
         initates a 2 Way TCP test with the first 2 ips from the ports list #can be changed
         returns True if the test started running False otherwise
@@ -227,7 +236,8 @@ class main:
         speeds=[]
         running=True
         print("------------------------------------------------------------------------------------------------------------------")
-        file_names=map(lambda t: t.name, self.threads)
+        file_names = LogTypes.getLogFileNames()[:int(self.test_type[0])]
+        print("file names: ", file_names)
         for file in file_names:
 
             with open(file, 'r') as f:
@@ -300,13 +310,13 @@ class LogTypes:
         """
         returns a list of the 4 log file names as strs with their extension/file type (.txt)
         """
-        return ["Server1.txt", "Server2.txt", "Client1.txt", "Client2.txt"]
+        return ["client1.txt", "client2.txt"]
 
     def getNames():
         """
         returns a list of the 4 log types as strs
         """
-        return ["Server1", "Server2", "Client1", "Client2"]
+        return ["Client1", "Client2"]
 
 
 
@@ -392,13 +402,13 @@ class App(tk.Frame):
 
     def start_button_command(self):
         global run
-        test_type=self.options.get()
         run=not run
+        print("button pressed")
         if run:
             # script.start(self)
             # print("run: ", run)
             self.script=threading.Thread(target=main, args=(
-                ([[self.client1, self.client2, self.server1, self.server2], test_type])))
+                ([[self.client1, self.client2, self.server1, self.server2], self.options.get()])))
             # self.script = threading.Thread(target=App.loop)
             # print(self.script)
             self.script.start()
@@ -409,7 +419,9 @@ class App(tk.Frame):
             # print("run: ", run)
             self.start_button.configure(text=("START"))
             self.script.join()
-
+            labels = [self.client1, self.client2, self.server1, self.server2]
+            for i in range(4):
+                labels[i].configure(text=LogTypes.getNames()[i] + ": Not Running")
 
 
 if __name__ == '__main__':

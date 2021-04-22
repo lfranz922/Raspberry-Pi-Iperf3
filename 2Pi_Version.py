@@ -9,6 +9,8 @@ import re
 import subprocess
 from datetime import datetime
 
+SECOND_IP = "169.254.224.49"
+
 """
 Made by Lukas Franz
 Things to add:
@@ -101,7 +103,7 @@ class Ports:
         """
         tests if any of the ports in self are connected to eachother
         """
-        return Ports.ping(self.ports[0], "169.254.224.49")
+        return Ports.ping(self.ports[0], SECOND_IP)
         #try:
             #print(Ports.ports)
             #for p1 in self.ports:
@@ -141,40 +143,34 @@ class main:
         print("ips has ports:", ips.ports)
         print("Script told to run:", run)
         while run:
+            self.writeToLogs("Pinging Ports")
             while (run and not ips.areConnected()):
                 print("connecting Ports...")
                 time.sleep(0.5)
             print("=================================\n")
             print("        ports connected")
             print("\n=================================")
+            self.writeToLogs("Ports Connected")
             while (run and not self.startTest(test_type)):
                 time.sleep(0.5)
                 continue
+
             time.sleep(0.5)
             while (run and self.isRunning()):
                 time.sleep(0.5)
-                print("Script Running: ", run)
-                if (not run):
+                if not run:
                     break
-
                 for i in range(int(test_type[0])):
                         labels[i].configure(text=LogTypes.getNames()[i] + ": " + str(self.speeds[i]))
 
-                print("exception happened. run: ", run)
             if not run:
                 break
 
-            print("End of Loop, Run:", run)
 
-        print("done while loop")
-        #for i in range(int(test_type[0])):
-        #    labels[i].configure(text=LogTypes.getNames()[i] + ": Not Running")
-        print("killing iperf")
         subprocess.Popen(['killall iperf3'], shell=True)
-        print("kiling Subprocess")
         for t in self.threads:
             t.kill()
-        print("test over")
+        self.writeToLogs("Test Manually Ended")
         return None
 
     def startTest(self, test):
@@ -183,8 +179,8 @@ class main:
         returns True if the test started running False otherwise
         """
         self.threads = []
-        client_cmd_R = 'iperf3 -c 169.254.224.49 -f m -t 0 -V --logfile {} -R --port 5400'
-        client_cmd = 'iperf3 -c 169.254.224.49 -f m -t 0 -V --logfile {} --port 5201'
+        client_cmd_R = 'iperf3 -c ' + SECOND_IP + ' -f m -t 0 -V --logfile {} -R --port 5400'
+        client_cmd = 'iperf3 -c ' + SECOND_IP + ' -f m -t 0 -V --logfile {} --port 5201'
         if "UDP" in test:
             client_cmd = client_cmd + "-u"
             client_cmd_R = client_cmd_R + "-u"
@@ -203,28 +199,7 @@ class main:
         print("=====================================\n")
         print(f"       starting {test}")
         print("\n=====================================")
-
-        time.sleep(2)
-        return self.isRunning()
-
-    def startTestOLD(self, ips):
-        """
-        initates a 2 Way TCP test with the first 2 ips from the ports list #can be changed
-        returns True if the test started running False otherwise
-        """
-        self.threads=[]
-        print("=====================================\n")
-        print("       starting 2 way TCP test")
-        print("\n=====================================")
-
-        self.threads.append(subprocess.Popen(
-            [f'iperf3 -s -B {ips.ports[0]} -f m --logfile Server1.txt'], shell=True, stdout=None))
-        self.threads.append(subprocess.Popen(
-            [f'iperf3 -s -B {ips.ports[1]} -f m --logfile Server2.txt'], shell=True, stdout=None))
-        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[0]} -B {ips.ports[1]} -f m -t 0 -V --logfile Client1.txt'],
-                                             shell=True, stdout=None))
-        self.threads.append(subprocess.Popen([f'iperf3 -c {ips.ports[1]} -B {ips.ports[0]} -f m -t 0 -V --logfile Client2.txt'],
-                                             shell=True, stdout=None))
+        self.writeToLogs(f"Starting {test}")
         time.sleep(2)
         return self.isRunning()
 
@@ -237,14 +212,14 @@ class main:
         running=True
         print("------------------------------------------------------------------------------------------------------------------")
         file_names = LogTypes.getLogFileNames()[:int(self.test_type[0])]
-        print("file names: ", file_names)
+        #print("file names: ", file_names)
         for file in file_names:
 
             with open(file, 'r') as f:
                 try:
                     # this could be traded out for reading from CMD line
                     last_line=f.read().splitlines()[-1]
-                    print(file, last_line)
+                    self.writeToLogs(file + " " + last_line)
                 except:
                     last_line="iperf3: exiting"
                     print("file is empty")
@@ -257,19 +232,19 @@ class main:
                         number=re.findall(r"\d+.?\d+", speed[-1])
                         speeds.append(float(number[-1]))
                         if float(number[-1]) > EXPECTED_MIN_SPEED:
-                            print(file[0:-4] + " 2-way TCP test is running")
+                            print(file[0:-4] + f" {self.test_type} test is running")
                         elif float(number[-1]) > 1:
                             print(file[0:-4] +
-                                  " 2-way TCP test is not running well")
+                                  f" {self.test_type} test is not running well")
                         else:
-                            print("\n\n\nTCP TEST IS TOO LOW\n\n\n")
+                            print("\n\n\n TEST IS TOO SLOW\n\n\n")
                             for t in self.threads:
                                 t.kill()
                             # could be turned into its own function
                             subprocess.Popen(['killall iperf3'], shell=True)
                             running=False
                     else:
-                        print(file[0:-4] + " 2-way TCP test is not running")
+                        print(file[0:-4] + f" {self.test_type} test is not running")
                         main.clearFileContents(file)
                         subprocess.Popen(['killall iperf3'], shell=True)
                         running=False
@@ -283,15 +258,17 @@ class main:
         self.speeds=speeds
         print(f"{self.test_type} has speeds: ", speeds)
         print("------------------------------------------------------------------------------------------------------------------")
-        timestamp=str(datetime.now())
-        log_file=open(self.log_name, 'a+')
         if not running:
-            log_file.write(timestamp + ": Iperf went down\n")
+            self.writeToLogs("Iperf went down")
             time.sleep(0.25)
         else:
-            log_file.write(timestamp + ": " + str(speeds) + "\n")
-        log_file.close()
+            self.writeToLogs(str(speeds))
         return running
+
+    def writeToLogs(self, s: str):
+        timestamp=str(datetime.now())
+        with open(self.log_name, 'a+') as file:
+            file.write(timestamp + ": " + s + "\n")
 
     def clearFileContents(fName):
         """
@@ -391,6 +368,33 @@ class App(tk.Frame):
         self.server2=server2
         self.root=root
 
+
+        direction=tk.Checkbutton(root)
+        direction_var = tk.IntVar()
+        ft = tkFont.Font(family='Times',size=10)
+        direction["font"] = ft
+        direction["fg"] = "#333333"
+        direction["justify"] = "center"
+        direction["text"] = "2-way/1-Way"
+        direction["variable"] = direction_var
+        direction.place(x=100,y=300,width=100,height=25)
+        #direction["command"] = self.direction_command
+        self.direction = direction_var
+
+        test_option=tk.Checkbutton(root)
+        test_option_var = tk.IntVar()
+        ft = tkFont.Font(family='Times',size=10)
+        test_option["font"] = ft
+        test_option["fg"] = "#333333"
+        test_option["justify"] = "center"
+        test_option["text"] = "TCP/UDP"
+        test_option["variable"] = test_option_var
+
+        test_option.place(x=435,y=300,width=100,height=25)
+        #test_option["command"] = self.test_option_command
+        self.test_option = test_option_var
+
+        """
         options=ttk.Combobox(root, values=[
                                "1-way TCP", "2-way TCP", "1-way UDP", "2-way UDP"], state="readonly")
         ft=tkFont.Font(family='Times', size=12)
@@ -399,16 +403,23 @@ class App(tk.Frame):
         options.current(1)
         self.options=options
         self.root=root
+        """
 
     def start_button_command(self):
         global run
         run=not run
         print("button pressed")
+
         if run:
-            # script.start(self)
-            # print("run: ", run)
+
+            test_type = str(abs(self.direction.get() - 2)) + "-way "
+            if self.test_option.get() == 0:
+                test_type = test_type + "TCP"
+            else:
+                test_type = test_type + "UDP"
+
             self.script=threading.Thread(target=main, args=(
-                ([[self.client1, self.client2, self.server1, self.server2], self.options.get()])))
+                ([[self.client1, self.client2, self.server1, self.server2], test_type])))
             # self.script = threading.Thread(target=App.loop)
             # print(self.script)
             self.script.start()

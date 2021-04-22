@@ -161,7 +161,10 @@ class main:
                 if not run:
                     break
                 for i in range(int(test_type[0])):
-                        labels[i].configure(text=LogTypes.getNames()[i] + ": " + str(self.speeds[i]))
+                    try:
+                        labels[i].configure(text=LogTypes.getNames()[i] + ": " + str(self.speeds[i]) + " Mbits/s")
+                    except:
+                        break
 
             if not run:
                 break

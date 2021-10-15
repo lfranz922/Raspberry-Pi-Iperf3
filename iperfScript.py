@@ -10,12 +10,10 @@ Things to add:
     - a better output screen (I'm thinking the speeds with a green background if iperf has a good speed and red if its slow/off)
     - turn into a proper script
         - when run from cmd line it throws an error
-    - look into the iperf termination thing
     - fix the ping function to work for linux
-    -
 
 Things that could be expanded on in the future:
-    - interface with automation (send logs/speed maybe as JSON idk tho)
+    - interface with automation (send logs/speed maybe as JSON)
     -
 """
 
@@ -134,11 +132,6 @@ class Ports:
         return False
 
 EXPECTED_MIN_SPEED = 900 #can be changed to whatever we want
-
-def getMode():
-    #TODO for automation if we want idea is to add a switch that will make you have to manually turn iperf back on when it fails and leave it running for automation
-    return 1
-
 
 class main:
     threads = []

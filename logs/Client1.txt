@@ -133,4 +133,3 @@ Starting Test: protocol: TCP, 1 streams, 131072 byte blocks, omitting 0 seconds,
 [  6] 106.00-107.00 sec   119 MBytes  1001 Mbits/sec    0   1.81 MBytes       
 [  6] 107.00-108.00 sec   119 MBytes  1000 Mbits/sec    0   1.81 MBytes       
 [  6] 108.00-109.00 sec   119 MBytes  1001 Mbits/sec    0   1.81 MBytes       
-                                                                                                                                                              
